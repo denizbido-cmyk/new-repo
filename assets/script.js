@@ -8,14 +8,6 @@ const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").match
 /* Data                                                                    */
 /* ---------------------------------------------------------------------- */
 
-const ACCENTS = [
-  { name: "crimson", hex: "#ff6b5e", tint: "#241416" },
-  { name: "violet", hex: "#b79bff", tint: "#1c1826" },
-  { name: "cobalt", hex: "#66beff", tint: "#141c28" },
-  { name: "leaf", hex: "#8ae066", tint: "#151f16" },
-  { name: "marigold", hex: "#ffcb61", tint: "#241f13" },
-];
-
 const FOCUS_LINES = [
   "Shipping programmes across 33 Üsküdar neighbourhoods",
   "Keeping a 175M TL municipal budget compliant",
@@ -329,7 +321,7 @@ async function initHeroScene() {
     THREE = await import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js");
   } catch (err) {
     wrap.classList.add("hero-canvas-fallback");
-    return; // CSS gradient background remains as graceful fallback
+    return; // CSS gradient backdrop remains as graceful fallback
   }
 
   let width = wrap.clientWidth;
@@ -343,76 +335,99 @@ async function initHeroScene() {
   });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setSize(width, height);
+  if ("outputColorSpace" in renderer) renderer.outputColorSpace = THREE.SRGBColorSpace;
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 100);
-  camera.position.set(0, 0, 11);
+  camera.position.set(0, 0.3, 10.5);
+  camera.lookAt(1.0, -0.2, 0);
 
-  const accentColors = ACCENTS.map((a) => new THREE.Color(a.hex));
+  // ---- Lighting: soft studio setup ----
+  scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+  const key = new THREE.DirectionalLight(0xffffff, 1.15);
+  key.position.set(4, 6, 6);
+  scene.add(key);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.4);
+  fill.position.set(-5, 2, 3);
+  scene.add(fill);
+  const rim = new THREE.DirectionalLight(0xcfe0ff, 0.5);
+  rim.position.set(-2, -3, -4);
+  scene.add(rim);
 
-  // ---- Particle field: soft glowing points orbiting the hub ----
-  const PARTICLE_COUNT = window.innerWidth < 700 ? 260 : 620;
-  const positions = new Float32Array(PARTICLE_COUNT * 3);
-  const colors = new Float32Array(PARTICLE_COUNT * 3);
-  const radii = new Float32Array(PARTICLE_COUNT);
+  // ---- Rig: a wayfinding signpost — the concrete, "real world object"
+  // counterpart to the site's own navigation (nameplate + section signs) ----
+  const rig = new THREE.Group();
+  rig.position.set(1.1, -0.5, 0);
+  rig.rotation.z = -0.05;
+  scene.add(rig);
 
-  for (let i = 0; i < PARTICLE_COUNT; i++) {
-    const r = 3.4 + Math.random() * 6.2;
-    const theta = Math.random() * Math.PI * 2;
-    const phi = Math.acos(Math.random() * 2 - 1);
-    const x = r * Math.sin(phi) * Math.cos(theta);
-    const y = r * Math.sin(phi) * Math.sin(theta) * 0.72;
-    const z = r * Math.cos(phi) * 0.6 - 2;
-    positions[i * 3] = x;
-    positions[i * 3 + 1] = y;
-    positions[i * 3 + 2] = z;
-    radii[i] = r;
-    const c = accentColors[i % accentColors.length];
-    colors[i * 3] = c.r;
-    colors[i * 3 + 1] = c.g;
-    colors[i * 3 + 2] = c.b;
-  }
+  const chrome = new THREE.MeshStandardMaterial({ color: 0xd7dade, metalness: 0.85, roughness: 0.28 });
+  const darkMetal = new THREE.MeshStandardMaterial({ color: 0x17181a, metalness: 0.6, roughness: 0.4 });
 
-  const particleGeo = new THREE.BufferGeometry();
-  particleGeo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-  particleGeo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  // pole
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 6.4, 20), chrome);
+  pole.position.y = 0.2;
+  rig.add(pole);
+  const poleCap = new THREE.Mesh(new THREE.SphereGeometry(0.065, 16, 16), chrome);
+  poleCap.position.y = 3.4;
+  rig.add(poleCap);
 
-  const spriteTexture = makeGlowSprite(THREE);
-  const particleMat = new THREE.PointsMaterial({
-    size: 0.16,
-    map: spriteTexture,
-    vertexColors: true,
-    transparent: true,
-    opacity: 0.85,
-    depthWrite: false,
-    blending: THREE.AdditiveBlending,
-    sizeAttenuation: true,
+  // nameplate sign (top) — blue enamel plate, like municipal street signage
+  const nameTex = makeSignTexture(document, {
+    text: "DENİZ BİDO",
+    sub: "PROJECT MANAGER",
+    bg: "#1a3d75",
+    fg: "#ffffff",
+    w: 1024, h: 320,
   });
-  const particles = new THREE.Points(particleGeo, particleMat);
-  scene.add(particles);
+  const namePlaque = makePlaque(THREE, nameTex, 2.3, 0.68, darkMetal);
+  namePlaque.position.set(0.75, 2.3, 0);
+  namePlaque.rotation.set(0, 0.28, -0.04);
+  rig.add(namePlaque);
+  attachBracket(THREE, rig, chrome, namePlaque.position, 2.65);
 
-  // ---- Central wireframe hub: icosahedron ----
-  const hubGeo = new THREE.IcosahedronGeometry(2.15, 1);
-  const hubMat = new THREE.MeshBasicMaterial({
-    color: 0xdced8f,
-    wireframe: true,
-    transparent: true,
-    opacity: 0.35,
+  // directional sign (mid) — yellow, points to the programmes wall
+  const progTex = makeSignTexture(document, {
+    text: "PROGRAMMES ARCHIVE",
+    sub: "19 MARKS · SCROLL ↓",
+    bg: "#f3c23d",
+    fg: "#141414",
+    w: 1024, h: 300,
   });
-  const hub = new THREE.Mesh(hubGeo, hubMat);
-  scene.add(hub);
+  const progPlaque = makePlaque(THREE, progTex, 2.5, 0.64, darkMetal);
+  progPlaque.position.set(-0.55, 1.25, 0.15);
+  progPlaque.rotation.set(0, -0.22, 0.05);
+  rig.add(progPlaque);
+  attachBracket(THREE, rig, chrome, progPlaque.position, 1.55);
 
-  const hubGeo2 = new THREE.IcosahedronGeometry(2.9, 0);
-  const hubMat2 = new THREE.MeshBasicMaterial({
-    color: 0x66beff,
-    wireframe: true,
-    transparent: true,
-    opacity: 0.12,
+  // directional sign (lower) — red, points to experience timeline
+  const expTex = makeSignTexture(document, {
+    text: "EXPERIENCE",
+    sub: "8 ROLES SINCE 2018",
+    bg: "#d94433",
+    fg: "#ffffff",
+    w: 900, h: 300,
   });
-  const hub2 = new THREE.Mesh(hubGeo2, hubMat2);
-  scene.add(hub2);
+  const expPlaque = makePlaque(THREE, expTex, 2.0, 0.64, darkMetal);
+  expPlaque.position.set(0.65, 0.3, -0.1);
+  expPlaque.rotation.set(0, 0.18, -0.06);
+  rig.add(expPlaque);
+  attachBracket(THREE, rig, chrome, expPlaque.position, 0.6);
 
-  scene.rotation.x = 0.15;
+  // small circular badge — a nod to the Altın Karınca award
+  const badgeTex = makeBadgeTexture(document, { line1: "AWARD", line2: "2024", bg: "#141414", fg: "#ffffff" });
+  const badge = makeBadge(THREE, badgeTex, 0.4, darkMetal);
+  badge.position.set(0.85, 1.85, 0.35);
+  badge.rotation.set(0.1, 0.5, 0.08);
+  rig.add(badge);
+
+  // ---- Fake contact-shadow: soft blurred ellipse under the rig ----
+  const shadowTex = makeShadowTexture(document);
+  const shadowMat = new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false });
+  const shadowPlane = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 2.2), shadowMat);
+  shadowPlane.rotation.x = -Math.PI / 2;
+  shadowPlane.position.set(1.4, -3.05, 0.4);
+  scene.add(shadowPlane);
 
   // ---- Pointer parallax & scroll dolly ----
   let pointerX = 0, pointerY = 0, targetX = 0, targetY = 0;
@@ -449,24 +464,27 @@ async function initHeroScene() {
   }
   window.addEventListener("resize", resize);
 
+  const baseRigY = rig.rotation.y;
   const clock = new THREE.Clock();
 
   function render() {
     const t = clock.getElapsedTime();
-    targetX += (pointerX - targetX) * 0.04;
-    targetY += (pointerY - targetY) * 0.04;
+    targetX += (pointerX - targetX) * 0.05;
+    targetY += (pointerY - targetY) * 0.05;
 
-    scene.rotation.y = t * 0.05 + targetX * 0.4;
-    scene.rotation.x = 0.15 + targetY * 0.2;
+    // whole rig sways gently, like a real post — plus a light parallax tilt
+    rig.rotation.y = baseRigY + Math.sin(t * 0.35) * 0.035 + targetX * 0.18;
+    rig.rotation.x = Math.sin(t * 0.28) * 0.015 + targetY * 0.06;
+    rig.position.y = -0.5 + scrollFactor * -1.4;
 
-    hub.rotation.y = t * 0.09;
-    hub.rotation.x = t * 0.05;
-    hub2.rotation.y = -t * 0.05;
+    // individual plaques swing slightly out of phase, like signs on a post
+    namePlaque.rotation.z = -0.04 + Math.sin(t * 0.5) * 0.02;
+    progPlaque.rotation.z = 0.05 + Math.sin(t * 0.45 + 1.2) * 0.02;
+    expPlaque.rotation.z = -0.06 + Math.sin(t * 0.6 + 2.1) * 0.02;
+    badge.rotation.z = Math.sin(t * 0.4) * 0.05;
 
-    particles.rotation.y = t * 0.02;
-
-    camera.position.z = 11 - scrollFactor * 3.2;
-    camera.position.y = scrollFactor * -1.2;
+    camera.position.z = 9.5 - scrollFactor * 2.6;
+    camera.position.y = 0.3 + scrollFactor * -0.6;
 
     renderer.render(scene, camera);
   }
@@ -483,18 +501,120 @@ async function initHeroScene() {
   loop();
 }
 
-function makeGlowSprite(THREE) {
-  const size = 128;
-  const canvas = document.createElement("canvas");
+/* ---- signpost scene helpers ---- */
+
+function roundRectPath(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function makeSignTexture(doc, { text, sub, bg, fg, w, h }) {
+  const canvas = doc.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  roundRectPath(ctx, 6, 6, w - 12, h - 12, 22);
+  ctx.fillStyle = bg;
+  ctx.fill();
+  ctx.lineWidth = 5;
+  ctx.strokeStyle = "rgba(255,255,255,0.3)";
+  ctx.stroke();
+
+  ctx.fillStyle = fg;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = `800 ${Math.floor(h * 0.26)}px Arial, Helvetica, sans-serif`;
+  ctx.fillText(text, w / 2, sub ? h * 0.4 : h / 2, w * 0.86);
+  if (sub) {
+    ctx.font = `700 ${Math.floor(h * 0.12)}px Arial, Helvetica, sans-serif`;
+    ctx.globalAlpha = 0.88;
+    ctx.fillText(sub, w / 2, h * 0.72, w * 0.86);
+    ctx.globalAlpha = 1;
+  }
+  return canvas;
+}
+
+function makeBadgeTexture(doc, { line1, line2, bg, fg }) {
+  const size = 512;
+  const canvas = doc.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = bg;
+  ctx.beginPath();
+  ctx.arc(size / 2, size / 2, size / 2 - 6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.lineWidth = 8;
+  ctx.strokeStyle = "rgba(255,255,255,0.55)";
+  ctx.stroke();
+
+  ctx.fillStyle = fg;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = "800 76px Arial, Helvetica, sans-serif";
+  ctx.fillText(line1, size / 2, size / 2 - 36);
+  ctx.font = "800 108px Arial, Helvetica, sans-serif";
+  ctx.fillText(line2, size / 2, size / 2 + 56);
+  return canvas;
+}
+
+function makeShadowTexture(doc) {
+  const size = 256;
+  const canvas = doc.createElement("canvas");
   canvas.width = size;
   canvas.height = size;
   const ctx = canvas.getContext("2d");
   const grad = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-  grad.addColorStop(0, "rgba(255,255,255,1)");
-  grad.addColorStop(0.35, "rgba(255,255,255,0.55)");
-  grad.addColorStop(1, "rgba(255,255,255,0)");
+  grad.addColorStop(0, "rgba(10,10,10,0.34)");
+  grad.addColorStop(0.6, "rgba(10,10,10,0.14)");
+  grad.addColorStop(1, "rgba(10,10,10,0)");
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, size, size);
-  const tex = new THREE.CanvasTexture(canvas);
-  return tex;
+  return canvas;
+}
+
+function makePlaque(THREE, canvasEl, w, h, edgeMat) {
+  const texture = new THREE.CanvasTexture(canvasEl);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const faceMat = new THREE.MeshPhysicalMaterial({
+    map: texture,
+    roughness: 0.38,
+    metalness: 0.06,
+    clearcoat: 0.55,
+    clearcoatRoughness: 0.3,
+  });
+  const geo = new THREE.BoxGeometry(w, h, 0.055);
+  // face order: +x -x +y -y +z -z — texture on the front (+z) face only
+  const mesh = new THREE.Mesh(geo, [edgeMat, edgeMat, edgeMat, edgeMat, faceMat, edgeMat]);
+  return mesh;
+}
+
+function makeBadge(THREE, canvasEl, radius, rimMat) {
+  const texture = new THREE.CanvasTexture(canvasEl);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const faceMat = new THREE.MeshPhysicalMaterial({
+    map: texture,
+    roughness: 0.35,
+    metalness: 0.08,
+    clearcoat: 0.6,
+    clearcoatRoughness: 0.25,
+  });
+  const geo = new THREE.CylinderGeometry(radius, radius, 0.05, 40);
+  const mesh = new THREE.Mesh(geo, [rimMat, faceMat, faceMat]);
+  mesh.rotation.x = Math.PI / 2;
+  return mesh;
+}
+
+function attachBracket(THREE, rig, mat, plaquePos, poleY) {
+  const dx = plaquePos.x;
+  const len = Math.max(0.12, Math.abs(dx) + 0.05);
+  const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, len, 8), mat);
+  arm.position.set(dx / 2, poleY, plaquePos.z * 0.5);
+  arm.rotation.z = Math.PI / 2;
+  rig.add(arm);
 }
