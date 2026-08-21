@@ -54,14 +54,33 @@ export default function HeroSection() {
         </FadeIn>
       </Magnet>
 
-      <div id="contact" className="flex justify-between items-end pb-7 sm:pb-8 md:pb-10 px-6 md:px-10 mt-auto">
-        <FadeIn delay={0.35} y={20}>
-          <p
-            className="text-[#D7E2EA] font-light uppercase tracking-wide leading-snug max-w-[160px] sm:max-w-[220px] md:max-w-[260px]"
-            style={{ fontSize: 'clamp(0.75rem, 1.4vw, 1.5rem)' }}
-          >
-            a 3d creator driven by crafting striking and unforgettable projects
-          </p>
+      <div id="contact" className="flex justify-between items-end pb-7 sm:pb-8 md:pb-10 px-6 md:px-10 mt-auto gap-6">
+        <FadeIn delay={0.35} y={20} className="max-w-[230px] sm:max-w-[300px] md:max-w-[360px]">
+          <div className="flex flex-col gap-2 sm:gap-3">
+            <span className="text-[#D7E2EA]/70 font-medium uppercase tracking-[0.2em] text-[10px] sm:text-xs">
+              — What I Deliver
+            </span>
+            <p className="italic font-semibold text-[#D7E2EA] text-base sm:text-xl md:text-2xl">
+              on time. on brief.
+            </p>
+            <p className="text-[#D7E2EA]/70 font-light leading-relaxed text-[11px] sm:text-sm">
+              Independent-minded Project Manager specialised in large-scale programme &amp; fund
+              delivery — high-density civic and cultural work for municipalities, festivals, and
+              private-sector partners alike. Based in Istanbul, working across Europe.
+            </p>
+            <div className="flex flex-col gap-1 text-[#D7E2EA] font-medium text-[11px] sm:text-sm">
+              <span>Istanbul, Turkey</span>
+              <a href="tel:+905387725027" className="hover:opacity-70 transition-opacity duration-200 w-fit">
+                +90 538 772 50 27
+              </a>
+              <a
+                href="mailto:denizbido@gmail.com"
+                className="hover:opacity-70 transition-opacity duration-200 w-fit"
+              >
+                denizbido@gmail.com
+              </a>
+            </div>
+          </div>
         </FadeIn>
         <FadeIn delay={0.5} y={20}>
           <ContactButton />
