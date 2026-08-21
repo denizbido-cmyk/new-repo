@@ -26,3 +26,137 @@ body {
   -webkit-text-fill-color: transparent;
   color: transparent;
 }
+
+/* ---------- Interactive avatar (mouse-follow / tilt / float / blink / click) ---------- */
+
+.ia-avatar-shell {
+  --mx: 0;
+  --my: 0;
+  width: 100%;
+  transform: translate3d(calc(var(--mx) * 18px), calc(var(--my) * 12px), 0);
+  transition: transform 180ms ease-out;
+  will-change: transform;
+}
+
+.ia-avatar-float {
+  width: 100%;
+  animation: ia-float 4.8s ease-in-out infinite;
+  will-change: transform;
+}
+
+.ia-avatar-tilt {
+  position: relative;
+  width: 100%;
+  transform-style: preserve-3d;
+  transform: rotateX(calc(var(--my) * -5deg)) rotateY(calc(var(--mx) * 7deg)) scale(1.01);
+  transition: transform 120ms ease-out;
+  will-change: transform;
+}
+
+.ia-avatar-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  user-select: none;
+  filter: drop-shadow(0 22px 46px rgba(0, 0, 0, 0.38)) saturate(1.02);
+  transform: translateZ(22px);
+}
+
+.ia-shine {
+  position: absolute;
+  inset: 6% 8% 8%;
+  border-radius: 48%;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background: linear-gradient(
+    112deg,
+    transparent 32%,
+    rgba(255, 255, 255, 0.05) 43%,
+    rgba(255, 255, 255, 0.14) 50%,
+    rgba(255, 255, 255, 0.04) 58%,
+    transparent 70%
+  );
+  transform: translateX(calc(var(--mx) * 16px)) translateY(calc(var(--my) * 10px));
+  opacity: 0.55;
+}
+
+.ia-blink {
+  position: absolute;
+  width: 9.3%;
+  height: 0;
+  background: linear-gradient(#b86f45, #9b5b38);
+  border-radius: 50% 50% 62% 62%;
+  top: 39.7%;
+  opacity: 0;
+  pointer-events: none;
+  transform-origin: top center;
+  z-index: 4;
+  filter: blur(0.2px);
+}
+
+.ia-blink-left {
+  left: 38.9%;
+  transform: rotate(-4deg);
+}
+
+.ia-blink-right {
+  left: 53.4%;
+  transform: rotate(4deg);
+}
+
+.ia-avatar-shell.ia-blinking .ia-blink {
+  animation: ia-blink-anim 155ms ease-in-out 2 alternate;
+}
+
+.ia-avatar-shell.ia-clicked .ia-avatar-tilt {
+  animation: ia-pop 360ms cubic-bezier(0.22, 1.2, 0.36, 1);
+}
+
+@keyframes ia-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-0.35deg);
+  }
+  50% {
+    transform: translateY(-14px) rotate(0.35deg);
+  }
+}
+
+@keyframes ia-blink-anim {
+  from {
+    height: 0;
+    opacity: 0;
+    transform: scaleY(0.1);
+  }
+  to {
+    height: 6.2%;
+    opacity: 0.97;
+    transform: scaleY(1);
+  }
+}
+
+@keyframes ia-pop {
+  0% {
+    scale: 1;
+  }
+  45% {
+    scale: 0.965;
+  }
+  100% {
+    scale: 1.01;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ia-avatar-float,
+  .ia-avatar-shell.ia-clicked .ia-avatar-tilt,
+  .ia-avatar-shell.ia-blinking .ia-blink {
+    animation: none;
+  }
+
+  .ia-avatar-shell,
+  .ia-avatar-tilt {
+    transition: none;
+  }
+}
