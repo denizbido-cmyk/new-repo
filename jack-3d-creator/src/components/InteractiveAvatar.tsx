@@ -26,8 +26,6 @@ export default function InteractiveAvatar({ src, alt, trackRef, className }: Int
     let targetY = 0;
     let currentX = 0;
     let currentY = 0;
-    let blinkTimer: ReturnType<typeof setTimeout>;
-    let blinkCleanup: ReturnType<typeof setTimeout>;
 
     function render() {
       currentX += (targetX - currentX) * 0.09;
@@ -50,20 +48,6 @@ export default function InteractiveAvatar({ src, alt, trackRef, className }: Int
       targetY = 0;
     }
 
-    function blink() {
-      shell!.classList.remove('ia-blinking');
-      void shell!.offsetWidth;
-      shell!.classList.add('ia-blinking');
-
-      clearTimeout(blinkCleanup);
-      blinkCleanup = setTimeout(() => {
-        shell!.classList.remove('ia-blinking');
-      }, 420);
-
-      const nextBlink = 2200 + Math.random() * 4200;
-      blinkTimer = setTimeout(blink, nextBlink);
-    }
-
     function react() {
       shell!.classList.remove('ia-clicked');
       void shell!.offsetWidth;
@@ -77,7 +61,6 @@ export default function InteractiveAvatar({ src, alt, trackRef, className }: Int
 
     if (!reduceMotion) {
       rafId = requestAnimationFrame(render);
-      blinkTimer = setTimeout(blink, 1200 + Math.random() * 1400);
     }
 
     return () => {
@@ -85,8 +68,6 @@ export default function InteractiveAvatar({ src, alt, trackRef, className }: Int
       track.removeEventListener('pointerleave', onPointerLeave);
       shell.removeEventListener('pointerdown', react);
       cancelAnimationFrame(rafId);
-      clearTimeout(blinkTimer);
-      clearTimeout(blinkCleanup);
     };
   }, [trackRef]);
 
@@ -96,8 +77,6 @@ export default function InteractiveAvatar({ src, alt, trackRef, className }: Int
         <div className="ia-avatar-tilt">
           <img className="ia-avatar-img" src={src} alt={alt} draggable={false} />
           <div className="ia-shine" aria-hidden="true" />
-          <div className="ia-blink ia-blink-left" aria-hidden="true" />
-          <div className="ia-blink ia-blink-right" aria-hidden="true" />
         </div>
       </div>
     </div>

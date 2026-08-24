@@ -27,7 +27,7 @@ body {
   color: transparent;
 }
 
-/* ---------- Interactive avatar (mouse-follow / tilt / float / blink / click) ---------- */
+/* ---------- Interactive avatar (mouse-follow / tilt / float / click) ---------- */
 
 .ia-avatar-shell {
   --mx: 0;
@@ -81,36 +81,6 @@ body {
   opacity: 0.55;
 }
 
-.ia-blink {
-  position: absolute;
-  height: 0;
-  background: linear-gradient(#c98455, #a8632f);
-  border-radius: 50% 50% 62% 62%;
-  opacity: 0;
-  pointer-events: none;
-  transform-origin: top center;
-  z-index: 4;
-  filter: blur(0.2px);
-}
-
-.ia-blink-left {
-  left: 38.5%;
-  top: 40.2%;
-  width: 19%;
-  transform: translateZ(24px) rotate(-3deg);
-}
-
-.ia-blink-right {
-  left: 57%;
-  top: 44%;
-  width: 12.5%;
-  transform: translateZ(24px) rotate(2deg);
-}
-
-.ia-avatar-shell.ia-blinking .ia-blink {
-  animation: ia-blink-anim 155ms ease-in-out 2 alternate;
-}
-
 .ia-avatar-shell.ia-clicked .ia-avatar-tilt {
   animation: ia-pop 360ms cubic-bezier(0.22, 1.2, 0.36, 1);
 }
@@ -122,19 +92,6 @@ body {
   }
   50% {
     transform: translateY(-14px) rotate(0.35deg);
-  }
-}
-
-@keyframes ia-blink-anim {
-  from {
-    height: 0;
-    opacity: 0;
-    transform: translateZ(24px) scaleY(0.1);
-  }
-  to {
-    height: 7.6%;
-    opacity: 0.97;
-    transform: translateZ(24px) scaleY(1);
   }
 }
 
@@ -152,8 +109,7 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .ia-avatar-float,
-  .ia-avatar-shell.ia-clicked .ia-avatar-tilt,
-  .ia-avatar-shell.ia-blinking .ia-blink {
+  .ia-avatar-shell.ia-clicked .ia-avatar-tilt {
     animation: none;
   }
 
