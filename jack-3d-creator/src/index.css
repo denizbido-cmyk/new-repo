@@ -77,17 +77,15 @@ body {
     rgba(255, 255, 255, 0.04) 58%,
     transparent 70%
   );
-  transform: translateX(calc(var(--mx) * 16px)) translateY(calc(var(--my) * 10px));
+  transform: translateZ(24px) translateX(calc(var(--mx) * 16px)) translateY(calc(var(--my) * 10px));
   opacity: 0.55;
 }
 
 .ia-blink {
   position: absolute;
-  width: 9.3%;
   height: 0;
-  background: linear-gradient(#b86f45, #9b5b38);
+  background: linear-gradient(#c98455, #a8632f);
   border-radius: 50% 50% 62% 62%;
-  top: 39.7%;
   opacity: 0;
   pointer-events: none;
   transform-origin: top center;
@@ -96,13 +94,17 @@ body {
 }
 
 .ia-blink-left {
-  left: 38.9%;
-  transform: rotate(-4deg);
+  left: 38.5%;
+  top: 40.2%;
+  width: 19%;
+  transform: translateZ(24px) rotate(-3deg);
 }
 
 .ia-blink-right {
-  left: 53.4%;
-  transform: rotate(4deg);
+  left: 57%;
+  top: 44%;
+  width: 12.5%;
+  transform: translateZ(24px) rotate(2deg);
 }
 
 .ia-avatar-shell.ia-blinking .ia-blink {
@@ -127,12 +129,12 @@ body {
   from {
     height: 0;
     opacity: 0;
-    transform: scaleY(0.1);
+    transform: translateZ(24px) scaleY(0.1);
   }
   to {
-    height: 6.2%;
+    height: 7.6%;
     opacity: 0.97;
-    transform: scaleY(1);
+    transform: translateZ(24px) scaleY(1);
   }
 }
 
